@@ -87,8 +87,8 @@ var rpCmd = &cobra.Command{
 		if strings.Contains(dirName, " ") {
 			dirName = strings.ReplaceAll(dirName, " ", "-")
 		}
-
-		ghBaseArgs := []string{"gh", "repo", "create", dirName, "--private", "--source=.", "--remote=upstream"}
+		// upstream?
+		ghBaseArgs := []string{"gh", "repo", "create", "--private", "--source=.", "--remote=origin"}
 		ghFullArgs := make([]string, len(ghBaseArgs))
 
 		copy(ghFullArgs, ghBaseArgs)
