@@ -1,46 +1,13 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strings"
 
 	"ghe/utils"
 
 	"github.com/spf13/cobra"
 )
-
-func confirmAction() bool {
-	reader := bufio.NewReader(os.Stdin)
-
-	for {
-		// fmt.Print("Do you want to proceed? [y/N]: ")
-		confirmationText := fmt.Sprintf(`Confirm the options:
-			Visibility: Public
-			Push local commits: Yes
-			Do you want to proceed? [y/N]
-		`)
-		fmt.Print(confirmationText)
-
-		response, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
-			return false
-		}
-
-		response = strings.ToLower(strings.TrimSpace(response))
-
-		switch response {
-		case "y", "yes":
-			return true
-		case "n", "no", "":
-			return false
-		default:
-			fmt.Println("Please answer 'y' or 'n'")
-		}
-	}
-}
 
 func init() {
 	rootCmd.AddCommand(rpCmd)
@@ -108,7 +75,7 @@ var rpCmd = &cobra.Command{
 		}
 
 		confirm, _ := cmd.Flags().GetBool("confirm")
-		if !confirm && !confirmAction() {
+		if !confirm && !utils.ConfirmAction() {
 			fmt.Println("Operation cancelled")
 			return
 		}
