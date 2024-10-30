@@ -3,73 +3,13 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
-	"sync"
+
+	"ghe/utils"
 
 	"github.com/spf13/cobra"
 )
-
-// return error but also return success output
-func ExecGhCmd(command string, args ...string) error {
-	cmd := exec.Command(command, args...) //.Output()
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log.Fatal(err)
-		return fmt.Errorf("Failed on stderr pipe: %v", err)
-	}
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("failed to create stdout pipe: %w", err)
-	}
-
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("Command Failed to start: %v", err)
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	go func() {
-		defer wg.Done()
-		scannerForStderr := bufio.NewScanner(stderr)
-		for scannerForStderr.Scan() {
-			fmt.Println(scannerForStderr.Text())
-		}
-
-		if err := scannerForStderr.Err(); err != nil {
-			log.Printf("error reading stderr: %v", err)
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-
-		scannerForStdout := bufio.NewScanner(stdout)
-		for scannerForStdout.Scan() {
-			fmt.Println(scannerForStdout.Text())
-		}
-
-		if err := scannerForStdout.Err(); err != nil {
-			log.Fatal(err)
-			log.Printf("error reading stdout: %v", err)
-		}
-	}()
-
-	wg.Wait()
-
-	if err := cmd.Wait(); err != nil {
-		log.Fatal(err)
-		return fmt.Errorf("command failed: %v", err)
-	}
-
-	return nil
-}
 
 func confirmAction() bool {
 	reader := bufio.NewReader(os.Stdin)
@@ -82,6 +22,7 @@ func confirmAction() bool {
 			Do you want to proceed? [y/N]
 		`)
 		fmt.Print(confirmationText)
+
 		response, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
@@ -99,21 +40,6 @@ func confirmAction() bool {
 			fmt.Println("Please answer 'y' or 'n'")
 		}
 	}
-}
-
-func getDirName() string {
-	currentDir, err := os.Getwd()
-
-	if err != nil {
-		fmt.Printf("Error grabing the path to dir")
-	}
-	dirName := filepath.Base(currentDir)
-
-	// make sure dirName is valid for github
-	if strings.Contains(dirName, " ") {
-		dirName = strings.ReplaceAll(dirName, " ", "-")
-	}
-	return dirName
 }
 
 func init() {
@@ -151,9 +77,16 @@ var rpCmd = &cobra.Command{
 
 		org, _ := cmd.Flags().GetString("org")
 		if org != "" {
-			dirName := getDirName()
+			dirName := utils.GetDirName()
 			orgAndProject := org + "/" + dirName
 			ghFullArgs = append(ghFullArgs, orgAndProject)
+		}
+
+		isRepo, err := os.Stat(".git")
+
+		// if true no need to do anything since it's already a repo
+		if err != nil && !isRepo.IsDir() {
+			utils.ExecCmd("git", "init")
 		}
 
 		// source
@@ -180,11 +113,11 @@ var rpCmd = &cobra.Command{
 			return
 		}
 
-		// fmt.Println(ghFullArgs)
-		errCmd := ExecGhCmd(ghFullArgs[0], ghFullArgs[1:]...)
-
-		if errCmd != nil {
-			fmt.Println("Error creating repo")
-		}
+		fmt.Println(ghFullArgs)
+		// errCmd := utils.ExecCmd(ghFullArgs[0], ghFullArgs[1:]...)
+		//
+		// if errCmd != nil {
+		// 	fmt.Println("Error creating repo")
+		// }
 	},
 }
