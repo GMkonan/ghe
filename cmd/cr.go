@@ -51,11 +51,17 @@ var rpCmd = &cobra.Command{
 
 		isRepo, err := os.Stat(".git")
 
-		// if true no need to do anything since it's already a repo
-		if err != nil && !isRepo.IsDir() {
+		if err != nil && !os.IsNotExist(err) {
+			fmt.Println("error on os stat")
+		}
+
+		if os.IsNotExist(err) {
 			utils.ExecCmd("git", "init")
 		}
 
+		if os.IsExist(err) && isRepo.IsDir() {
+			utils.ExecCmd("git", "init")
+		}
 		// source
 		ghFullArgs = append(ghFullArgs, "--source=.")
 
@@ -80,11 +86,11 @@ var rpCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Println(ghFullArgs)
-		// errCmd := utils.ExecCmd(ghFullArgs[0], ghFullArgs[1:]...)
-		//
-		// if errCmd != nil {
-		// 	fmt.Println("Error creating repo")
-		// }
+		// fmt.Println(ghFullArgs)
+		errCmd := utils.ExecCmd(ghFullArgs[0], ghFullArgs[1:]...)
+
+		if errCmd != nil {
+			fmt.Println("Error creating repo")
+		}
 	},
 }

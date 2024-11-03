@@ -12,10 +12,11 @@ func ConfirmAction() bool {
 
 	for {
 		// fmt.Print("Do you want to proceed? [y/N]: ")
-		confirmationText := fmt.Sprintf(`Confirm the options:
-			Visibility: Public
-			Push local commits: Yes
-			Do you want to proceed? [y/N]
+		confirmationText := fmt.Sprintf(`
+Confirm the options:
+Visibility: Public
+Push local commits: Yes
+Do you want to proceed? [y/N]
 		`)
 		fmt.Print(confirmationText)
 
