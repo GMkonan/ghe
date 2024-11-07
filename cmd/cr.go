@@ -10,35 +10,31 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(rpCmd)
 
 	var Org string
-	rpCmd.Flags().StringVar(&Org, "org", "", "Define a organization to create your repo into")
+	crCmd.Flags().StringVar(&Org, "org", "", "Define a organization to create your repo into")
 
 	var IsPrivate bool
-	rpCmd.Flags().BoolVar(&IsPrivate, "private", false, "Create repo as private")
+	crCmd.Flags().BoolVar(&IsPrivate, "private", false, "Create repo as private")
 
 	var Push bool
-	rpCmd.Flags().BoolVar(&Push, "push", false, "Push to repo")
+	crCmd.Flags().BoolVar(&Push, "push", false, "Push to repo")
 
 	var Confirm bool
-	rpCmd.Flags().BoolVar(&Confirm, "confirm", false, "Confirm create repo action without prompting")
+	crCmd.Flags().BoolVar(&Confirm, "confirm", false, "Confirm create repo action without prompting")
 }
 
-var rpCmd = &cobra.Command{
+var crCmd = &cobra.Command{
 	Use:   "cr",
 	Short: "Create a repo on github",
 	Long: `Create a repo with (repo create) from gh but with sane defaults
-		- public
-		- no push
-		- name from current folder
-		- 
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 		// upstream?
 		ghBaseArgs := []string{"gh", "repo", "create"}
 		ghFullArgs := make([]string, len(ghBaseArgs))
+		ghPositionalArgs := make([]string, 0)
 
 		copy(ghFullArgs, ghBaseArgs)
 
@@ -46,7 +42,7 @@ var rpCmd = &cobra.Command{
 		if org != "" {
 			dirName := utils.GetDirName()
 			orgAndProject := org + "/" + dirName
-			ghFullArgs = append(ghFullArgs, orgAndProject)
+			ghPositionalArgs = append(ghPositionalArgs, orgAndProject)
 		}
 
 		isRepo, err := os.Stat(".git")
@@ -62,31 +58,32 @@ var rpCmd = &cobra.Command{
 		if os.IsExist(err) && isRepo.IsDir() {
 			utils.ExecCmd("git", "init")
 		}
-		// source
-		ghFullArgs = append(ghFullArgs, "--source=.")
-
-		// remote
-		ghFullArgs = append(ghFullArgs, "--remote=origin")
 
 		isPrivate, _ := cmd.Flags().GetBool("private")
 		if isPrivate == true {
-			ghFullArgs = append(ghFullArgs, "--private")
+			ghPositionalArgs = append(ghPositionalArgs, "--private")
 		} else {
-			ghFullArgs = append(ghFullArgs, "--public")
+			ghPositionalArgs = append(ghPositionalArgs, "--public")
 		}
 
 		push, _ := cmd.Flags().GetBool("push")
 		if push == true {
-			ghFullArgs = append(ghFullArgs, "--push")
+			ghPositionalArgs = append(ghPositionalArgs, "--push")
 		}
 
+		ghFullArgs = append(ghFullArgs, "--source=.")
+
+		ghFullArgs = append(ghFullArgs, "--remote=origin")
+
+		ghFullArgs = append(ghFullArgs, ghPositionalArgs...)
+
 		confirm, _ := cmd.Flags().GetBool("confirm")
-		if !confirm && !utils.ConfirmAction() {
+
+		if !confirm && !utils.ConfirmAction(cmd) {
 			fmt.Println("Operation cancelled")
 			return
 		}
 
-		// fmt.Println(ghFullArgs)
 		errCmd := utils.ExecCmd(ghFullArgs[0], ghFullArgs[1:]...)
 
 		if errCmd != nil {

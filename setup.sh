@@ -1,6 +1,6 @@
 #!/bin/sh
 
-GHE_CONFIG_DIR
+#GHE_CONFIG_DIR
 REPO="https://github.com/GMkonan/ghe.git"
 
 error() {

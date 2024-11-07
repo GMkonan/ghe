@@ -5,19 +5,36 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/spf13/cobra"
 )
 
-func ConfirmAction() bool {
+func ConfirmAction(cmd *cobra.Command) bool {
 	reader := bufio.NewReader(os.Stdin)
+	listOfConfirmArgs := make([]string, 0)
+
+	visibility, _ := cmd.Flags().GetBool("private")
+	if visibility {
+		listOfConfirmArgs = append(listOfConfirmArgs, "Private")
+	} else {
+		listOfConfirmArgs = append(listOfConfirmArgs, "Public")
+	}
+	push, _ := cmd.Flags().GetBool("push")
+	if push {
+		listOfConfirmArgs = append(listOfConfirmArgs, "Yes")
+	} else {
+		listOfConfirmArgs = append(listOfConfirmArgs, "No")
+	}
 
 	for {
 		// fmt.Print("Do you want to proceed? [y/N]: ")
+
 		confirmationText := fmt.Sprintf(`
 Confirm the options:
-Visibility: Public
-Push local commits: Yes
+Visibility: %s
+Push local commits: %s
 Do you want to proceed? [y/N]
-		`)
+`, listOfConfirmArgs[0], listOfConfirmArgs[1])
 		fmt.Print(confirmationText)
 
 		response, err := reader.ReadString('\n')
